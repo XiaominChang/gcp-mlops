@@ -1,30 +1,45 @@
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/udemy-mlops/xgboost_coupon_model', '.']
+  # Step 1: Build the Docker image
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/ml-models/xgboost-coupon-model:$COMMIT_SHA",
+        ".",
+      ]
 
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/udemy-mlops/xgboost_coupon_model']
+  # Step 2: Push the image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/ml-models/xgboost-coupon-model:$COMMIT_SHA",
+      ]
 
-- name: 'gcr.io/udemy-mlops/xgboost_coupon_model'
-  entrypoint: 'bash'
-  args:
-   - '-c'
-   - |
-      python main.py & python -m pytest
-  
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: gcloud
-  args:
-   - 'run'
-   - 'deploy'
-   - 'xgboost-coupon-model'
-   - '--image'
-   - 'gcr.io/udemy-mlops/xgboost_coupon_model'
-   - '--region'
-   - 'us-central1'
-   - '--allow-unauthenticated'
+  # Step 3: Run tests inside the built container
+  - name: "us-central1-docker.pkg.dev/$PROJECT_ID/ml-models/xgboost-coupon-model:$COMMIT_SHA"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        python main.py & sleep 5 && python -m pytest
+
+  # Step 4: Deploy to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "xgboost-coupon-model"
+      - "--image"
+      - "us-central1-docker.pkg.dev/$PROJECT_ID/ml-models/xgboost-coupon-model:$COMMIT_SHA"
+      - "--region"
+      - "us-central1"
+      - "--allow-unauthenticated"
+
 images:
-- 'gcr.io/udemy-mlops/xgboost_coupon_model'
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/ml-models/xgboost-coupon-model:$COMMIT_SHA"
 
 options:
   logging: CLOUD_LOGGING_ONLY

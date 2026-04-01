@@ -1,7 +1,7 @@
-scikit-learn==1.2.2
-pandas
-pyarrow
-pytest
-requests
-google-cloud-storage
-google-cloud-bigquery
+scikit-learn>=1.5.0
+pandas>=2.2.0
+pyarrow>=15.0.0
+pytest>=8.0.0
+requests>=2.31.0
+google-cloud-storage>=2.14.0
+google-cloud-bigquery>=3.17.0

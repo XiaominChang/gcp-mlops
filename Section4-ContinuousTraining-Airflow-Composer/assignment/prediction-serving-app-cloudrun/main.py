@@ -1,21 +1,32 @@
-import pandas as pd
-from flask import Flask, request, jsonify
+"""
+Advertising ROI Prediction Serving Application
+Flask app deployed on Cloud Run for real-time predictions.
+
+Updated: Python 3.12, Flask>=3.0.0, gunicorn>=22.0.0
+"""
+
+import json
+import os
+
 import joblib
-import os,json
-from google.cloud import storage
-from google.cloud import logging
+import pandas as pd
+from flask import Flask, jsonify, request
+from google.cloud import logging, storage
 
 app = Flask(__name__)
-model = None
 
 logging_client = logging.Client()
-logger = logging_client.logger('advertising-roi-prediction-serving-logs')
+logger = logging_client.logger("advertising-roi-prediction-serving-logs")
+
 
 def load_model():
+    """Load model from local file."""
     model = joblib.load("model.joblib")
     return model
 
+
 def load_model_cloud():
+    """Download model from GCS and load it."""
     storage_client = storage.Client()
     bucket_name = "sid-ml-ops"
     bucket = storage_client.get_bucket(bucket_name)
@@ -24,39 +35,45 @@ def load_model_cloud():
     model = joblib.load("model.joblib")
     return model
 
-@app.route('/predict', methods=['POST'])
+
+@app.route("/predict", methods=["POST"])
 def predict():
+    """Handle prediction requests."""
     model = load_model()
-    try :
+    try:
         input_json = request.get_json()
-        # Log input request payload . Uncomment before deploying to cloud-run
-        # logger.log_struct({
-        #     'keyword': 'advertisement_roi_prediction_serving',
-        #     'prediction_status':1,
-        #     'error_msg': input_json
-        # })
+        logger.log_struct({
+            "keyword": "advertisement_roi_prediction_serving",
+            "prediction_status": 1,
+            "input_payload": str(input_json),
+        })
 
         input_df = pd.DataFrame(input_json, index=[0])
         y_predictions = model.predict(input_df)
-        response = {'predictions': y_predictions.tolist()}
+        response = {"predictions": y_predictions.tolist()}
 
-        # Log predicted value. Uncomment before deploying to cloud-run
-        # logger.log_struct({
-        #     'keyword': 'advertisement_roi_prediction_serving',
-        #     'prediction_status':1,
-        #     'predicted_output': y_predictions
-        # })
+        logger.log_struct({
+            "keyword": "advertisement_roi_prediction_serving",
+            "prediction_status": 1,
+            "predicted_output": y_predictions.tolist(),
+        })
 
         return jsonify(response), 200
-    
-    except Exception as e:
-        #Uncomment before deploying to cloud-run
-        # logger.log_struct({
-        #     'keyword': 'advertisement_roi_prediction_serving',
-        #     'prediction_status': 0,
-        #     'error_msg': str(e)
-        # })
-        return jsonify({'error': str(e)}), 400
 
-if __name__ == '__main__':
+    except Exception as e:
+        logger.log_struct({
+            "keyword": "advertisement_roi_prediction_serving",
+            "prediction_status": 0,
+            "error_msg": str(e),
+        })
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/health", methods=["GET"])
+def health():
+    """Health check endpoint."""
+    return jsonify({"status": "healthy"}), 200
+
+
+if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5050)))

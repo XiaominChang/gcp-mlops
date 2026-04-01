@@ -1,17 +1,35 @@
-# Step-1
-docker build -t demo-flask-app .
+#!/bin/bash
+# ==============================================================================
+# Deploy Flask App to Artifact Registry and Cloud Run
+# ==============================================================================
+# Replace PROJECT_ID and REPO with your values before running.
+# ==============================================================================
 
-# Push to Container Registry 
-docker tag demo-flask-app gcr.io/udemy-mlops-395416/demo-flask-app
-docker push gcr.io/udemy-mlops-395416/demo-flask-app
+PROJECT_ID="YOUR_PROJECT_ID"
+REGION="us-central1"
+REPO="python-apps"
+IMAGE="demo-flask-app"
 
-gcloud run deploy demo-flask-app --image gcr.io/udemy-mlops-395416/demo-flask-app --region us-central1
+# Step 1: Configure Docker for Artifact Registry
+gcloud auth configure-docker ${REGION}-docker.pkg.dev
 
+# Step 2: Create Artifact Registry repository (if not exists)
+gcloud artifacts repositories create ${REPO} \
+  --repository-format=docker \
+  --location=${REGION} \
+  --description="Python application Docker images"
 
-# Push to Artifact Registry 
-docker tag demo-flask-app us-central1-docker.pkg.dev/udemy-mlops-395416/python-apps/demo-flask-app
-docker push us-central1-docker.pkg.dev/udemy-mlops-395416/python-apps/demo-flask-app
+# Step 3: Build Docker image
+docker build -t ${IMAGE} .
 
-gcloud run deploy demo-flask-app2 \
---image us-central1-docker.pkg.dev/udemy-mlops-395416/python-apps/demo-flask-app \
---region us-central1
+# Step 4: Tag for Artifact Registry
+docker tag ${IMAGE} ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE}
+
+# Step 5: Push to Artifact Registry
+docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE}
+
+# Step 6: Deploy to Cloud Run
+gcloud run deploy ${IMAGE} \
+  --image ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE} \
+  --region ${REGION} \
+  --allow-unauthenticated

@@ -1,12 +1,35 @@
-# docker build -t xgboost_coupon_model .
+#!/bin/bash
+# ==============================================================================
+# Deploy and test the XGBoost Coupon Recommendation model
+# ==============================================================================
 
-# docker tag xgboost_coupon_model gcr.io/udemy-mlops/xgboost_coupon_model
+PROJECT_ID="YOUR_PROJECT_ID"
+REGION="us-central1"
+REPO="ml-models"
+IMAGE="xgboost-coupon-model"
 
-# docker push gcr.io/udemy-mlops/xgboost_coupon_model
+# Build Docker image
+docker build -t ${IMAGE} .
 
-# gcloud run deploy xgboost-coupon-model --image  gcr.io/udemy-mlops/xgboost_coupon_model --region us-central1
+# Tag for Artifact Registry
+docker tag ${IMAGE} ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE}
 
-curl -X POST https://xgboost-coupon-model-ucinc65roa-uc.a.run.app/predict \
+# Push to Artifact Registry
+docker push ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE}
+
+# Deploy to Cloud Run
+gcloud run deploy ${IMAGE} \
+  --image ${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${IMAGE} \
+  --region ${REGION} \
+  --allow-unauthenticated
+
+# Submit Cloud Build
+gcloud builds submit --region ${REGION}
+
+# ==============================================================================
+# Test locally (flask app running on port 5051)
+# ==============================================================================
+curl -X POST http://127.0.0.1:5051/predict \
 -H "Content-Type: application/json" \
 -d '{
      "destination": "No Urgent Place",
@@ -33,4 +56,9 @@ curl -X POST https://xgboost-coupon-model-ucinc65roa-uc.a.run.app/predict \
      "direction_same": 0
 }'
 
-
+# ==============================================================================
+# Test Cloud Run deployment (replace URL with your Cloud Run service URL)
+# ==============================================================================
+# curl -X POST https://xgboost-coupon-model-XXXXX-uc.a.run.app/predict \
+# -H "Content-Type: application/json" \
+# -d '{ ... same JSON as above ... }'

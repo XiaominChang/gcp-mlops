@@ -1,10 +1,12 @@
 import pytest
 from main import app, preprocess
 
+
 @pytest.fixture
 def client():
     with app.test_client() as client:
         yield client
+
 
 def test_predict(client):
     input_data = {
@@ -29,13 +31,14 @@ def test_predict(client):
         "Restaurant20To50": "1~3",
         "toCoupon_GEQ15min": 1,
         "toCoupon_GEQ25min": 0,
-        "direction_same": 0
+        "direction_same": 0,
     }
-    response = client.post('/predict', json=input_data)
+    response = client.post("/predict", json=input_data)
     print(response.status_code)
     print(response.json)
     assert response.status_code == 200
     assert response.json["predictions"][0] in [0, 1]
+
 
 def test_predict_failure(client):
     input_data = {
@@ -53,12 +56,13 @@ def test_predict_failure(client):
         "education": ["Some college - no degree"],
         "occupation": ["Unemployed"],
         "income": ["$37500 - $49999"],
-        "Bar": ["never"]
+        "Bar": ["never"],
     }
-    response = client.post('/predict', json=input_data)
+    response = client.post("/predict", json=input_data)
     print(response.status_code)
     print(response.json)
     assert response.status_code == 400
+
 
 def test_preprocess():
     input_data = {
@@ -83,7 +87,7 @@ def test_preprocess():
         "Restaurant20To50": ["1~3"],
         "toCoupon_GEQ15min": [1],
         "toCoupon_GEQ25min": [0],
-        "direction_same": [0]
+        "direction_same": [0],
     }
     df = preprocess(input_data)
     assert len(df.columns) == 39
