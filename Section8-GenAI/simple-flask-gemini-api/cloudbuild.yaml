@@ -1,0 +1,43 @@
+# Cloud Build configuration for text classification Gemini app
+# Usage: gcloud builds submit --config cloudbuild.yaml .
+
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/gemini-apps/llm-text-classification:$SHORT_SHA'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/gemini-apps/llm-text-classification:latest'
+      - '.'
+
+  # Step 2: Push the Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/gemini-apps/llm-text-classification'
+
+  # Step 3: Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'llm-text-classification'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/gemini-apps/llm-text-classification:$SHORT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '512Mi'
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/gemini-apps/llm-text-classification'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -1,8 +1,11 @@
-FROM python:3.10-slim
-WORKDIR /
+FROM python:3.12-slim
 
-COPY model_training_code.py model_training_code.py
-COPY requirements.txt requirements.txt
+WORKDIR /app
 
-RUN pip install -r requirements.txt
-ENTRYPOINT ["python3","model_training_code.py"]
+COPY model_training_code.py .
+COPY test-training.py .
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+ENTRYPOINT ["python3", "model_training_code.py"]

@@ -1,95 +1,78 @@
+"""
+Credit Score Preprocessing & Model Training
+=============================================
+Trains an XGBoost credit scoring model with categorical encoding.
+Data is preprocessed and can be loaded into BigQuery for Feature Store.
+
+Requirements:
+  pip install xgboost>=2.1.0 scikit-learn>=1.5.0 pandas>=2.2.0
+            google-cloud-storage google-cloud-bigquery
+
+Updated: 2026 - xgboost>=2.1.0, scikit-learn>=1.5.0, Python 3.12
+"""
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 from xgboost import XGBClassifier
 from google.cloud import storage
-from sklearn.metrics import precision_score, recall_score, roc_auc_score, accuracy_score,confusion_matrix
 
+# ─── Configuration ───────────────────────────────────────────────────────────
+GCS_BUCKET = "your-bucket-name"          # TODO: replace
 storage_client = storage.Client()
-bucket = storage_client.bucket("sid-kubeflow-v1")
+bucket = storage_client.bucket(GCS_BUCKET)
 
+
+# ─── Encoding Functions ─────────────────────────────────────────────────────
 def purpose_encode(x):
-    if x == "Consumer Goods":
-        return 1
-    elif x == "Vehicle":
-        return 2
-    elif x == "Tuition":
-        return 3
-    elif x == "Business":
-        return 4
-    elif x == "Repairs":
-        return 5
-    else:
-        return 0
+    mapping = {"Consumer Goods": 1, "Vehicle": 2, "Tuition": 3, "Business": 4, "Repairs": 5}
+    return mapping.get(x, 0)
+
 
 def other_parties_encode(x):
-    if x == "Guarantor":
-        return 1
-    elif x == "Co-Applicant":
-        return 2
-    else:
-        return 0
+    mapping = {"Guarantor": 1, "Co-Applicant": 2}
+    return mapping.get(x, 0)
+
 
 def qualification_encode(x):
-    if x == "unskilled":
-        return 1
-    elif x == "skilled":
-        return 2
-    elif x == "highly skilled":
-        return 3
-    else:
-        return 0
+    mapping = {"unskilled": 1, "skilled": 2, "highly skilled": 3}
+    return mapping.get(x, 0)
+
 
 def credit_standing_encode(x):
-    if x == "good":
-        return 1
-    else:
-        return 0
+    return 1 if x == "good" else 0
+
 
 def assets_encode(x):
-    if x == "Vehicle":
-        return 1
-    elif x == "Investments":
-        return 2
-    elif x == "Home":
-        return 3
-    else:
-        return 0
+    mapping = {"Vehicle": 1, "Investments": 2, "Home": 3}
+    return mapping.get(x, 0)
+
 
 def housing_encode(x):
-    if x == "rent":
-        return 1
-    elif x == "own":
-        return 2
-    else:
-        return 0
+    mapping = {"rent": 1, "own": 2}
+    return mapping.get(x, 0)
+
 
 def marital_status_encode(x):
-    if x == "Married":
-        return 1
-    elif x == "Single":
-        return 2
-    else:
-        return 0
+    mapping = {"Married": 1, "Single": 2}
+    return mapping.get(x, 0)
+
 
 def other_payment_plans_encode(x):
-    if x == "bank":
-        return 1
-    elif x == "stores":
-        return 2
-    else:
-        return 0
+    mapping = {"bank": 1, "stores": 2}
+    return mapping.get(x, 0)
+
 
 def sex_encode(x):
-    if x == "M":
-        return 1
-    else:
-        return 0
-    
+    return 1 if x == "M" else 0
+
+
 def credit_score_decode(x):
     return "Approved" if x == 1 else "Denied"
 
+
 def preprocess_data(df):
+    """Apply categorical encoding to all text columns."""
     df["PURPOSE_CODE"] = df["PURPOSE"].apply(purpose_encode)
     df["OTHER_PARTIES_CODE"] = df["OTHER_PARTIES"].apply(other_parties_encode)
     df["QUALIFICATION_CODE"] = df["QUALIFICATION"].apply(qualification_encode)
@@ -100,59 +83,64 @@ def preprocess_data(df):
     df["OTHER_PAYMENT_PLANS_CODE"] = df["OTHER_PAYMENT_PLANS"].apply(other_payment_plans_encode)
     df["SEX_CODE"] = df["SEX"].apply(sex_encode)
 
-    columns_to_drop = ["PURPOSE", "OTHER_PARTIES", "QUALIFICATION", "CREDIT_STANDING",
-                       "ASSETS", "HOUSING", "MARITAL_STATUS", "OTHER_PAYMENT_PLANS", "SEX"]
+    columns_to_drop = [
+        "PURPOSE", "OTHER_PARTIES", "QUALIFICATION", "CREDIT_STANDING",
+        "ASSETS", "HOUSING", "MARITAL_STATUS", "OTHER_PAYMENT_PLANS", "SEX",
+    ]
     df = df.drop(columns=columns_to_drop)
-
     return df
 
+
 def split_data(df):
-    X_train, X_test, y_train, y_test = train_test_split(df.drop('CREDIT_STANDING_CODE', axis=1), 
-                                                        df['CREDIT_STANDING_CODE'], test_size=0.30)
-    return X_train, X_test, y_train, y_test
+    X = df.drop("CREDIT_STANDING_CODE", axis=1)
+    y = df["CREDIT_STANDING_CODE"]
+    return train_test_split(X, y, test_size=0.30, random_state=42)
 
 
-def train_model(X_train, y_train,max_depth,learning_rate,n_estimators):    
+def train_model(X_train, y_train, max_depth=5, learning_rate=0.2, n_estimators=40):
     model = XGBClassifier(
         max_depth=max_depth,
         learning_rate=learning_rate,
         n_estimators=n_estimators,
         random_state=42,
-        use_label_encoder=False
-    )    
+    )
     model.fit(X_train, y_train)
     return model
 
-def save_model_artifact(pipeline):
-    artifact_name = 'model.bst'
-    pipeline.save_model(artifact_name)
-    model_artifact = bucket.blob('credit-scoring/artifacts/'+artifact_name)
-    model_artifact.upload_from_filename(artifact_name)
 
 def evaluate_model(model, X_test, y_test):
     y_pred = model.predict(X_test)
     accuracy = accuracy_score(y_test, y_pred)
     precision = precision_score(y_test, y_pred)
     recall = recall_score(y_test, y_pred)
-    confusion_matrix = confusion_matrix(y_test, y_pred)
-    
-    return accuracy,precision,recall
-    
-input_file = "gs://sid-kubeflow-v1/credit-scoring/credit_files.csv"
+    print(f"  accuracy:  {accuracy:.4f}")
+    print(f"  precision: {precision:.4f}")
+    print(f"  recall:    {recall:.4f}")
+    return accuracy, precision, recall
+
+
+def save_model_artifact(model):
+    artifact_name = "model.bst"
+    model.save_model(artifact_name)
+    blob = bucket.blob(f"credit-scoring/artifacts/{artifact_name}")
+    blob.upload_from_filename(artifact_name)
+    print(f"Model saved to gs://{GCS_BUCKET}/credit-scoring/artifacts/{artifact_name}")
+
+
+# ── Main ─────────────────────────────────────────────────────────────────────
+input_file = f"gs://{GCS_BUCKET}/credit-scoring/credit_files.csv"
 credit_df = pd.read_csv(input_file)
 credit_df = preprocess_data(credit_df)
 
 X_train, X_test, y_train, y_test = split_data(credit_df)
 
-max_depth=5
-learning_rate=0.2
-n_estimators=40
-pipeline = train_model(X_train, y_train,max_depth,learning_rate,n_estimators)
+print("Training credit scoring model:")
+model = train_model(X_train, y_train, max_depth=5, learning_rate=0.2, n_estimators=40)
 
-accuracy,precision,recall = evaluate_model(pipeline, X_test, y_test)
+accuracy, precision, recall = evaluate_model(model, X_test, y_test)
 
-if accuracy>0.5 and precision>0.5 :
-    save_model_artifact(pipeline)
-    model_validation="true"
-else :
-    model_validation="false"
+if accuracy > 0.5 and precision > 0.5:
+    save_model_artifact(model)
+    print("Model validation: PASSED")
+else:
+    print("Model validation: FAILED - model not saved")

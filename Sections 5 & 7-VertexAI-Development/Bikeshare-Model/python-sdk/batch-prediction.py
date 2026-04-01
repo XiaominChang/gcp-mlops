@@ -1,71 +1,42 @@
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
-from google.cloud import storage
-from joblib import dump
-from sklearn.pipeline import make_pipeline
+"""
+Bikeshare Model - Standalone Batch Prediction Script
+Runs a batch prediction job against a model already in Vertex AI Model Registry.
 
-storage_client = storage.Client()
-bucket = storage_client.bucket("sid-ml-ops")
+Updated: google-cloud-aiplatform>=1.60.0, Python 3.12
+"""
 
-def load_data(filename):
-    df = pd.read_csv(filename)
-    return df
+from google.cloud import aiplatform
 
-def preprocess_data(df):
-    df = df.rename(columns={'weathersit':'weather',
-                            'yr':'year',
-                            'mnth':'month',
-                            'hr':'hour',
-                            'hum':'humidity',
-                            'cnt':'count'})
-    df = df.drop(columns=['instant', 'dteday', 'year'])
-    cols = ['season', 'month', 'hour', 'holiday', 'weekday', 'workingday', 'weather']
-    for col in cols:
-        df[col] = df[col].astype('category')
-    df['count'] = np.log(df['count'])
-    df_oh = df.copy()
-    for col in cols:
-        df_oh = one_hot_encoding(df_oh, col)
-    X = df_oh.drop(columns=['atemp', 'windspeed', 'casual', 'registered', 'count'], axis=1)
-    y = df_oh['count']
-    return X, y
+# ---- Configuration ----
+PROJECT_ID = "YOUR_PROJECT_ID"  # Replace with your GCP project ID
+REGION = "us-central1"
+BUCKET_NAME = "YOUR_BUCKET_NAME"  # Replace with your GCS bucket name
+MODEL_ID = "YOUR_MODEL_ID"  # Replace with your Vertex AI model ID
 
-def one_hot_encoding(data, column):
-    data = pd.concat([data, pd.get_dummies(data[column], prefix=column, drop_first=True)], axis=1)
-    data = data.drop([column], axis=1)
-    return data
+# Initialize Vertex AI
+aiplatform.init(project=PROJECT_ID, location=REGION, staging_bucket=f"gs://{BUCKET_NAME}")
 
-def train_model(model_name, x_train, y_train):
-    if model_name == 'random_forest_regressor':
-        model = RandomForestRegressor()
-    else:
-        raise ValueError("Invalid model name.")
+# Reference existing model from registry
+model = aiplatform.Model(
+    f"projects/{PROJECT_ID}/locations/{REGION}/models/{MODEL_ID}"
+)
 
-    pipeline = make_pipeline(model)
-    pipeline.fit(x_train, y_train)
-    return pipeline
+# Submit batch prediction job
+gcs_input_uri = f"gs://{BUCKET_NAME}/bike-share/batch-new.csv"
+BATCH_OUTPUT_URI = f"gs://{BUCKET_NAME}/bikeshare-batch-prediction-output"
 
-def save_model_artifact(model_name, pipeline):
-    # artifact_name = model_name+'_model.joblib'
-    artifact_name = 'model.joblib'
-    dump(pipeline, artifact_name)
-    model_artifact = bucket.blob('bike-share-rf-regression-artifact/'+artifact_name)
-    model_artifact.upload_from_filename(artifact_name)
+batch_predict_job = model.batch_predict(
+    job_display_name="bikeshare_batch_predict",
+    gcs_source=gcs_input_uri,
+    gcs_destination_prefix=BATCH_OUTPUT_URI,
+    instances_format="csv",
+    predictions_format="jsonl",
+    machine_type="n1-standard-4",
+    starting_replica_count=1,
+    max_replica_count=1,
+    sync=False,
+)
 
-def main():
-    model_name = "random_forest_regressor"
-    filename = 'gs://sid-ml-ops/bicycle-data/hour.csv'
-    df = load_data(filename)
-    X, y = preprocess_data(df)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
-    pipeline = train_model(model_name, X_train, y_train)
-    y_pred = pipeline.predict(X_test)
-    save_model_artifact(model_name, pipeline)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    print('RMSE:', rmse)
-
-if __name__ == '__main__':
-    main()
+batch_predict_job.wait()
+print(f"Batch prediction job completed: {batch_predict_job.display_name}")
+print(f"Output location: {BATCH_OUTPUT_URI}")

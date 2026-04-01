@@ -1,25 +1,41 @@
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/udemy-mlops/advertising_roi_model', '.']
+  # Step 1: Build Docker image with training code and dependencies
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-docker.pkg.dev/udemy-mlops/mlops-repo/advertising-roi-model:latest'
+      - '.'
 
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/udemy-mlops/advertising_roi']
+  # Step 2: Push image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-docker.pkg.dev/udemy-mlops/mlops-repo/advertising-roi-model:latest'
 
-- name: 'gcr.io/udemy-mlops/advertising_roi'
-  entrypoint: 'bash'
-  args:
-   - '-c'
-   - |
-      python -m pytest
+  # Step 3: Run unit tests inside the container
+  - name: 'us-docker.pkg.dev/udemy-mlops/mlops-repo/advertising-roi-model:latest'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        python -m pytest test_training.py -v
 
-- name: 'gcr.io/cloud-builders/git'
-  args: ['clone', 'https://github.com/sidoncloud/your-repository-name.git']
+  # Step 4: Clone the model training repository
+  - name: 'gcr.io/cloud-builders/git'
+    args:
+      - 'clone'
+      - 'https://github.com/sidoncloud/advertising-roi-training-repo.git'
 
-- name: 'gcr.io/cloud-builders/gsutil'
-  args: ['cp', 'model-training-repo/advertising_model_training.py', 'gs://us-central1-mlops-airflow-faa6f9bc-bucket/dags']
+  # Step 5: Copy updated training script to Composer DAGs bucket
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args:
+      - 'cp'
+      - 'advertising-roi-training-repo/advertising_model_training.py'
+      - 'gs://us-central1-mlops-airflow-faa6f9bc-bucket/dags'
 
 images:
-- 'gcr.io/udemy-mlops/advertising_roi'
+  - 'us-docker.pkg.dev/udemy-mlops/mlops-repo/advertising-roi-model:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
