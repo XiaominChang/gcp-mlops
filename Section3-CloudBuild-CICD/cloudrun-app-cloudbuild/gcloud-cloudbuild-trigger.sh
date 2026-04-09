@@ -4,7 +4,7 @@
 # ==============================================================================
 
 # Submit a build manually using cloudbuild.yaml
-gcloud builds submit --region australia-southeast1s
+gcloud builds submit --region australia-southeast1
 
 # Create a Cloud Build trigger connected to a GitHub repository
 # Replace REPO_OWNER, REPO_NAME, and PROJECT_ID with your values.

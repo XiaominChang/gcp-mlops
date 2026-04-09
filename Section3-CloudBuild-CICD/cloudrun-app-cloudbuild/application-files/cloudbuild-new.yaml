@@ -5,7 +5,7 @@ steps:
       [
         "build",
         "-t",
-        "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA",
+        "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:$COMMIT_SHA",
         ".",
       ]
 
@@ -14,11 +14,11 @@ steps:
     args:
       [
         "push",
-        "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA",
+        "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:$COMMIT_SHA",
       ]
 
   # Step 3: Run tests inside the built container
-  - name: "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA"
+  - name: "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:$COMMIT_SHA"
     entrypoint: "bash"
     args:
       - "-c"
@@ -33,13 +33,13 @@ steps:
       - "deploy"
       - "demo-flask-app"
       - "--image"
-      - "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA"
+      - "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:$COMMIT_SHA"
       - "--region"
-      - "us-central1"
+      - "australia-southeast1"
       - "--allow-unauthenticated"
 
 images:
-  - "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA"
+  - "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:$COMMIT_SHA"
 
 options:
   logging: CLOUD_LOGGING_ONLY
