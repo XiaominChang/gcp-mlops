@@ -1,10 +1,12 @@
-#!/bin/bash
-# ==============================================================================
-# Grant Cloud Build service account the required IAM roles
-# ==============================================================================
-# Replace PROJECT_ID and PROJECT_NUMBER with your values.
-# Find your project number: gcloud projects describe PROJECT_ID --format='value(projectNumber)'
-# ==============================================================================
+# Assign Service account user role to the service account 
+gcloud projects add-iam-policy-binding udemy-mlops-492103 \
+ --member=serviceAccount:188673622020@cloudbuild.gserviceaccount.com --role=roles/iam.serviceAccountUser
+ # Assign Cloud Run role to the service account 
+gcloud projects add-iam-policy-binding udemy-mlops-492103 \
+  --member=serviceAccount:188673622020@cloudbuild.gserviceaccount.com --role=roles/run.admin
+gcloud projects add-iam-policy-binding udemy-mlops-492103 \
+  --member=serviceAccount:188673622020@cloudbuild.gserviceaccount.com \
+  --role=roles/artifactregistry.writer
 
 PROJECT_ID="YOUR_PROJECT_ID"
 PROJECT_NUMBER="YOUR_PROJECT_NUMBER"

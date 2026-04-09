@@ -1,3 +1,20 @@
+# Step-1
+docker build -t demo-flask-app .
+
+# Push to Container Registry 
+# docker tag demo-flask-app gcr.io/udemy-mlops-395416/demo-flask-app
+# docker push gcr.io/udemy-mlops-395416/demo-flask-app
+
+# gcloud run deploy demo-flask-app --image gcr.io/udemy-mlops-395416/demo-flask-app --region us-central1
+
+
+# Push to Artifact Registry 
+docker tag demo-flask-app australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app
+docker push australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app
+
+gcloud run deploy demo-flask-app \
+--image australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app \
+--region australia-southeast1
 #!/bin/bash
 # ==============================================================================
 # Deploy Flask App to Artifact Registry and Cloud Run

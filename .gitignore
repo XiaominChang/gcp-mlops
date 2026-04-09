@@ -1,0 +1,82 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Virtualenvs
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.hypothesis/
+htmlcov/
+
+# Pyenv
+.python-version
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# macOS
+.DS_Store
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Logs and runtime
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# PyInstaller
+*.manifest
+*.spec
+
+# mypy
+.mypy_cache/
+
+# pip wheel cache
+pip-wheel-metadata/
+
+# coverage reports
+coverage.xml
+
+# Byte-compiled
+*.pyc
+
+# Temporary files
+*~
+*.swp
+*.swo
+
+# Ignore virtual env created by editors/tools in project folders
+application-files/.venv/

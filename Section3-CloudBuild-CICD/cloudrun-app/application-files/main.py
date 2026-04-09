@@ -8,13 +8,13 @@ client = bigquery.Client()
 
 @app.route("/")
 def main(big_query_client=client):
-    table_id = "YOUR_PROJECT_ID.test_schema.us_states"
+    table_id = "udemy-mlops-492103.test_schema.us_states"
     job_config = bigquery.LoadJobConfig(
         write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE,
         source_format=bigquery.SourceFormat.CSV,
         skip_leading_rows=1,
     )
-    uri = "gs://YOUR_BUCKET_NAME/us-states.csv"
+    uri = "gs://zed-ml-ops/us-states.csv"
     load_job = big_query_client.load_table_from_uri(
         uri, table_id, job_config=job_config
     )
