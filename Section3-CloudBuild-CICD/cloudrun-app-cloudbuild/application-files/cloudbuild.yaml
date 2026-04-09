@@ -1,45 +1,41 @@
 steps:
-  # Step 1: Build the Docker image
-  - name: "gcr.io/cloud-builders/docker"
+  - name: 'gcr.io/cloud-builders/docker'
     args:
       [
-        "build",
-        "-t",
-        "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA",
-        ".",
+        'build',
+        '-t',
+        'australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:latest',
+        '.'
       ]
 
-  # Step 2: Push the image to Artifact Registry
-  - name: "gcr.io/cloud-builders/docker"
+  - name: 'gcr.io/cloud-builders/docker'
     args:
       [
-        "push",
-        "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA",
+        'push',
+        'australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:latest'
       ]
 
-  # Step 3: Run tests inside the built container
-  - name: "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA"
-    entrypoint: "bash"
+  - name: 'australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:latest'
+    entrypoint: 'bash'
     args:
-      - "-c"
+      - '-c'
       - |
-        python -m pytest
+          python -m pytest
 
-  # Step 4: Deploy to Cloud Run
-  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    entrypoint: gcloud
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
     args:
-      - "run"
-      - "deploy"
-      - "demo-flask-app"
-      - "--image"
-      - "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA"
-      - "--region"
-      - "us-central1"
-      - "--allow-unauthenticated"
+      - 'run'
+      - 'deploy'
+      - 'demo-flask-app'
+      - '--image'
+      - 'australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:latest'
+      - '--region'
+      - 'australia-southeast1'
+      - '--allow-unauthenticated'
 
 images:
-  - "us-central1-docker.pkg.dev/$PROJECT_ID/python-apps/demo-flask-app:$COMMIT_SHA"
+  - 'australia-southeast1-docker.pkg.dev/udemy-mlops-492103/python-apps/demo-flask-app:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY
