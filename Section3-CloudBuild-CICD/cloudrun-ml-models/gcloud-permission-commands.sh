@@ -8,6 +8,6 @@ gcloud projects add-iam-policy-binding udemy-mlops \
   --member=serviceAccount:1090925531874@cloudbuild.gserviceaccount.com --role=roles/run.admin
 
 # Command to run the build using cloudbuild.yaml
-gcloud builds submit --region us-central1
+gcloud builds submit --region australia-southeast1
 
 

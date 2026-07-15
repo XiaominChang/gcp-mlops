@@ -1,0 +1,8 @@
+.gcloudignore
+.git
+.venv
+__pycache__
+.pytest_cache
+*.ipynb
+data/
+test-flask-output-local.sh

@@ -4,9 +4,8 @@ steps:
     args:
       [
         "build",
-        "--platform", "linux/amd64",
         "-t",
-        "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model",
+        "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model:$COMMIT_SHA",
         ".",
       ]
 
@@ -15,11 +14,11 @@ steps:
     args:
       [
         "push",
-        "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model",
+        "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model:$COMMIT_SHA",
       ]
 
   # Step 3: Run tests inside the built container
-  - name: "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model"
+  - name: "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model:$COMMIT_SHA"
     entrypoint: "bash"
     args:
       - "-c"
@@ -34,13 +33,13 @@ steps:
       - "deploy"
       - "xgboost-coupon-model"
       - "--image"
-      - "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model"
+      - "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model:$COMMIT_SHA"
       - "--region"
       - "australia-southeast1"
       - "--allow-unauthenticated"
 
 images:
-  - "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model"
+  - "australia-southeast1-docker.pkg.dev/udemy-mlops-492103/ml-models/xgboost-coupon-model:$COMMIT_SHA"
 
 options:
   logging: CLOUD_LOGGING_ONLY

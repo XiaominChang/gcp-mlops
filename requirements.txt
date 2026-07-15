@@ -1,0 +1,10 @@
+Flask>=3.0.0
+gunicorn>=22.0.0
+scikit-learn>=1.5.0
+xgboost>=2.1.0
+pandas
+pyarrow
+pytest
+category_encoders
+requests
+google-cloud-storage

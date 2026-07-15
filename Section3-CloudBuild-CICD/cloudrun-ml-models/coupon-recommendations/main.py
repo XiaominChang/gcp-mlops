@@ -83,8 +83,16 @@ def preprocess_data(df):
             },
             "time": {"7AM": 0, "10AM": 1, "2PM": 2, "6PM": 3, "10PM": 4},
         }
-    )
+    ).infer_objects(copy=False)
     return df_le
+
+
+EXPECTED_FEATURE_ORDER = (
+    [f"col_{i}" for i in range(27)]
+    + ["time", "expiration", "age", "education", "income", "Bar",
+       "CoffeeHouse", "CarryAway", "Restaurant20To50",
+       "toCoupon_GEQ15min", "toCoupon_GEQ25min", "direction_same"]
+)
 
 
 def encode_features(x, n_components=27):
@@ -99,12 +107,13 @@ def encode_features(x, n_components=27):
         n_components=n_components,
     ).fit(x)
     x_encoded = hashing_ros_enc.transform(x.reset_index(drop=True))
+    x_encoded = x_encoded[EXPECTED_FEATURE_ORDER]
     return x_encoded
 
 
 def _load_model():
     """Load model from local artifacts directory."""
-    file_path = "artifacts/xgboost_coupon_recommendation.pkl"
+    file_path = "artifacts/xgboost_coupon_recommendation_hpt.pkl"
     model = pickle.load(open(file_path, "rb"))
     return model
 
@@ -112,11 +121,11 @@ def _load_model():
 def load_model():
     """Load model from Google Cloud Storage."""
     storage_client = storage.Client()
-    bucket_name = "YOUR_BUCKET_NAME"
+    bucket_name = "zed-ml-ops"
     bucket = storage_client.get_bucket(bucket_name)
-    blob = bucket.blob("ml-artifacts/xgboost_coupon_recommendation.pkl")
-    blob.download_to_filename("xgboost_coupon_recommendation.pkl")
-    model = pickle.load(open("xgboost_coupon_recommendation.pkl", "rb"))
+    blob = bucket.blob("ml-artifacts/xgboost_coupon_recommendation_hpt.pkl")
+    blob.download_to_filename("xgboost_coupon_recommendation_hpt.pkl")
+    model = pickle.load(open("xgboost_coupon_recommendation_hpt.pkl", "rb"))
     return model
 
 
