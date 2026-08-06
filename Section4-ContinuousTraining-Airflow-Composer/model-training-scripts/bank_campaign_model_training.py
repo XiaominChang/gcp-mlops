@@ -110,7 +110,7 @@ def load_model_artifact(file_name):
 def write_metrics_to_bigquery(algo_name, training_time, model_metrics):
     """Write training metrics to BigQuery for tracking."""
     client = bigquery.Client()
-    table_id = "udemy-mlops.ml_ops.bank_campaign_model_metrics"
+    table_id = "udemy-mlops-492103.ml_ops.bank_campaign_model_metrics"
     table = bigquery.Table(table_id)
 
     row = {

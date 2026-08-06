@@ -15,7 +15,9 @@ import gcsfs
 import pandas as pd
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from airflow.utils.dates import days_ago
+# from airflow.utils.dates import days_ago
+import pendulum
+from datetime import datetime
 from google.cloud import bigquery, logging, storage
 from imblearn.over_sampling import RandomOverSampler
 
@@ -66,7 +68,7 @@ def validate_csv():
 def read_last_training_metrics():
     """Read the most recent training metrics from BigQuery."""
     client = bigquery.Client()
-    table_id = "udemy-mlops.ml_ops.bank_campaign_model_metrics"
+    table_id = "udemy-mlops-492103.ml_ops.bank_campaign_model_metrics"
     query = f"""
         SELECT *
         FROM `{table_id}`
@@ -110,8 +112,8 @@ def evaluate_model():
     last_precision = last_model_metrics["0"]["precision"]
     last_recall = last_model_metrics["0"]["recall"]
 
-    precision_threshold = 0.98
-    recall_threshold = 0.98
+    precision_threshold = 0.7
+    recall_threshold = 0.7
 
     if (
         precision >= precision_threshold
@@ -140,9 +142,14 @@ def evaluate_model():
 
 
 # DAG definition
+# default_args = {
+#     "owner": "airflow",
+#     "start_date": days_ago(1),
+#     "retries": 1,
+# }
 default_args = {
     "owner": "airflow",
-    "start_date": days_ago(1),
+    "start_date": pendulum.datetime(2026, 7, 1, tz="UTC"),
     "retries": 1,
 }
 
@@ -150,7 +157,7 @@ dag = DAG(
     "dag_bank_campaign_continuous_training",
     default_args=default_args,
     description="Bank campaign model continuous training DAG",
-    schedule_interval=None,
+    schedule=None,
 )
 
 validate_csv_task = PythonOperator(

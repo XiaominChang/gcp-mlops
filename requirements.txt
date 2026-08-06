@@ -1,10 +1,14 @@
 Flask>=3.0.0
 gunicorn>=22.0.0
+numpy>=1.26.0
 scikit-learn>=1.5.0
 xgboost>=2.1.0
+imbalanced-learn>=0.12.0
 pandas
 pyarrow
 pytest
 category_encoders
 requests
 google-cloud-storage
+google-cloud-bigquery>=3.17.0
+dill>=0.3.8
